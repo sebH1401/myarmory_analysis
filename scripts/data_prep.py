@@ -3,8 +3,7 @@ import requests
 import numpy as np
 
 
-#start down, this is just for retrieving data
-log_urls = '/home/seb/dev/c#/lotus/analysis/log_list.txt'
+#retrieve data
 log_urls = '/home/seb/dev/c#/lotus/myarmory_analysis/log_list.txt'
 
 with open(log_urls, 'r') as file:
@@ -13,16 +12,17 @@ with open(log_urls, 'r') as file:
 
 pre_url = 'https://dps.report/getJson?permalink='
 
-match_ids_boons = {
-    718: 'regen',
-    740: 'might',
-    1187: 'quick',
-    30328: 'alac',
-    725: 'fury'
-    }
+
 
 
 def process_log(log_url: str) -> pd.DataFrame:
+    match_ids_boons = {
+        718: 'regen',
+        740: 'might',
+        1187: 'quick',
+        30328: 'alac',
+        725: 'fury'
+        }
     response = requests.get(pre_url+log_url)
     log_data = response.json()
     dur_str = log_data['duration']
@@ -112,7 +112,7 @@ def process_log_list(log_url_list: pd.Series)-> list:
     df_log = log_url_list.apply(process_log)
     return df_log
 
-frames = process_log_list(log_url_list[1:4])
+frames = process_log_list(log_url_list)
 df = pd.concat(list(frames))
 
 fill_dict=  {
