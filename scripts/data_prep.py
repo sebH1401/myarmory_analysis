@@ -36,9 +36,13 @@ def process_log(log_url: str) -> pd.DataFrame:
     player_stats = []
     for player in log_data['players']:
         acc_name = player['account']
-        dps = player['dpsTargets'][0][0]['dps']
+        dps = player['dpsAll'][0]['dps']
         dmg_taken = player['defenses'][0]['damageTaken']
         downed = player['defenses'][0]['downCount']
+        if 'deadDuration' in player['defenses'][0].keys():
+            dead_duration = player['defenses'][0]['deadDuration']/100
+        else:
+            dead_duration = 0
         cleanse = player['support'][0]['condiCleanse']
         profession = player['profession']
         stack_dist = player['statsAll'][0]['stackDist']
@@ -96,8 +100,10 @@ def process_log(log_url: str) -> pd.DataFrame:
             'dmgTaken': dmg_taken,
             'stack_dist': stack_dist,
             'downed': downed,
+            'dead_duration': dead_duration,
             'cleanses': cleanse,
-            'above90%': above90
+            'above90%': above90,
+            'log': log_url
             }
         player_stats.append(dataset)
     return pd.DataFrame(player_stats)
@@ -118,29 +124,23 @@ fill_dict=  {
 }
 
 df = df.fillna(fill_dict)
-df.to_csv('/home/seb/dev/c#/lotus/analysis/raw_data.csv')
-df2 = df
-#start here
-df_labeled = pd.read_excel('/home/seb/dev/c#/lotus/analysis/data_labeled.xlsx')
-df.drop('Unnamed: 0', axis=1, inplace=True)
-df['boon_out'] = 50*(df['might out'] + df['fury out'] +8*df['quick out'] + 8*df['alac out'])
-#df['is_success'] = df2['is_success'].tolist()
-#df['stack_dist'] = df['stack_dist'].tolist()
-#df['profession'] = df['profession'].tolist()
-df['primary role'] = df_labeled['primary role'].str.lower()
-df['secondary_role'] = df_labeled['secondary role'].str.lower()
 
-df.to_csv('/home/seb/dev/c#/lotus/analysis/data_labeled.csv')
+def filter_df(df: pd.DataFrame, min_time: int, min_alive: float) -> pd.DataFrame:
+    #wipes and co
+    df_filter = df[~(df['time']<= min_time) | (df['is_success'])]
+    df_filter = df_filter[df_filter['dead_duration']/df_filter['time']<=min_alive]
+    df_filter = df_filter[df_filter['above90%'] != 0]
+    df_filter = df_filter[df_filter['dps'] != 0]
+    #weird players
+    df_filter = df_filter[~df_filter['player'].isin(['Conjured Sword', 'Saul D\'Alessio', 'Shackled Prisoner'])]
+    
+    #sort out hks
+    df_filter = df_filter[~((df_filter['encounter'].str.match('Deimos')) & (df_filter['stack_dist'] >=700))]
+    return df_filter
 
-#filter 'strange data'
-df_filtered = df[(df['time'] >= 90) | (df['is_success']!=False) & (df['time'] <= 90)]
-df_filtered = df_filtered[~df_filtered['player'].isin(['Conjured Sword', 'Saul D\'Alessio', 'Shackled Prisoner'])]
-df_filtered = df_filtered[df_filtered['above90%'] != 0]
-df_filtered = df_filtered[df_filtered['dps'] != 0]
-#sort out hks
-df_filtered = df_filtered[~((df_filtered['encounter'].str.match('Deimos')) & (df_filtered['stack_dist'] >=700))]
+df_filter = filter_df(df, 90, 0.60)
 
-df_filtered.to_csv('/home/seb/dev/c#/lotus/analysis/data_filtered.csv')
+df_filter.to_csv('/home/seb/dev/c#/lotus/analysis/data/data_raw.csv')
 
 
 
