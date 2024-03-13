@@ -1,9 +1,11 @@
 import pandas as pd
 import requests
+import numpy as np
 
 
 #start down, this is just for retrieving data
 log_urls = '/home/seb/dev/c#/lotus/analysis/log_list.txt'
+log_urls = '/home/seb/dev/c#/lotus/myarmory_analysis/log_list.txt'
 
 with open(log_urls, 'r') as file:
     log_url_list = pd.Series(file.readlines())
@@ -21,14 +23,14 @@ match_ids_boons = {
 
 
 def process_log(log_url: str) -> pd.DataFrame:
-    response  = requests.get(pre_url+log_url)
+    response = requests.get(pre_url+log_url)
     log_data = response.json()
-    dur_str =log_data['duration']
+    dur_str = log_data['duration']
     dur_str = dur_str.replace('m', '')
     dur_str = dur_str.replace('s', '')
     dur_str = dur_str.split()
     time = float(dur_str[0])*60+float(dur_str[1])
-    encounter_name =log_data['fightName']
+    encounter_name = log_data['fightName']
     is_CM = log_data['isCM']
     is_success = log_data['success']
     player_stats = []
@@ -104,7 +106,7 @@ def process_log_list(log_url_list: pd.Series)-> list:
     df_log = log_url_list.apply(process_log)
     return df_log
 
-frames = process_log_list(log_url_list)
+frames = process_log_list(log_url_list[1:4])
 df = pd.concat(list(frames))
 
 fill_dict=  {
