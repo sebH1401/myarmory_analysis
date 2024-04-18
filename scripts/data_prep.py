@@ -4,7 +4,7 @@ import numpy as np
 
 
 #retrieve data
-log_urls = '/home/seb/dev/c#/lotus/myarmory_analysis/log_list.txt'
+log_urls = '/home/seb/dev/c#/lotus/myarmory_analysis/data/log_list.txt'
 
 with open(log_urls, 'r') as file:
     log_url_list = pd.Series(file.readlines())
